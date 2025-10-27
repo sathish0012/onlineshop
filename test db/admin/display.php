@@ -5,7 +5,7 @@ include "../db.php";
 // Check if the user is logged in
 if (isset($_SESSION['user_id'])) {
 
-    // Fetch categories
+    // Fetch products
     $sql = "SELECT * FROM products"; 
     $result = mysqli_query($conn, $sql);
 
@@ -23,56 +23,73 @@ if (isset($_SESSION['user_id'])) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>View Orders</title>
+<title>View Products</title>
 <style>
 body {
-  background-color: #fce4ec;
-  font-family: Arial, sans-serif;
+  background-color: #e8f0fe; /* light blue background */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
+  color: #1c1c1c; /* darker text for contrast */
 }
 
-/* Sidebar */
-.dashbord_slider {
-  width: 200px;
-  height: 100vh;
-  background-color: #f4f4f4;
-  padding-top: 20px;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+/* SIDEBAR */
+.sidebar {
+  width: 220px;
+  background-color: #1a237e; /* deep indigo */
   position: fixed;
   top: 0;
   left: 0;
+  height: 100vh;
+  padding-top: 60px;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+  transition: transform 0.3s ease;
+  z-index: 1000;
 }
-
-.dashbord_slider ul {
-  list-style: none;
-  padding: 10px;
-  margin: 0;
-}
-
-.dashbord_slider li { margin-bottom: 10px; }
-
-.dashbord_slider a {
+.sidebar ul { list-style: none; padding: 0; margin: 0; }
+.sidebar li { margin-bottom: 10px; }
+.sidebar a {
   display: block;
-  padding: 12px 15px;
+  padding: 12px 25px;
   text-decoration: none;
-  color: #333;
+  color: #e8eaf6; /* light text */
   font-size: 16px;
-  border-radius: 5px;
-  transition: background 0.3s, color 0.3s;
+  border-radius: 8px;
+  transition: 0.3s;
 }
-
-.dashbord_slider a:hover {
-  background-color: #e6c9d2;
+.sidebar a.active, .sidebar a:hover {
+  background-color: #3949ab; /* hover indigo */
   color: #fff;
 }
 
-/* Table */
+/* TOGGLE BUTTON */
+.toggle-btn {
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  background: #3949ab; /* indigo */
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1001;
+  font-size: 18px;
+}
+
+/* CONTENT */
+.content {
+  margin-left: -30px;
+  padding: 20px;
+}
+
+/* TABLE */
 .table-container {
-  width: calc(100% - 200px);
-  margin-left: 200px;
+  width: calc(100% - 240px);
+  margin-left: 240px;
   background-color: #fff;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  border-radius: 8px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  border-radius: 12px;
   overflow-x: auto;
 }
 
@@ -80,71 +97,95 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9em;
-  min-width: 800px;
+  min-width: 900px;
 }
 
-thead { background-color: #f2f2f2; }
-
+thead { 
+  background: linear-gradient(90deg, #3949ab, #5c6bc0); 
+  color: #fff;
+}
 th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; }
+tbody tr:nth-child(even) { background-color: #e3f2fd; }
+tbody tr:hover { background-color: #bbdefb; }
 
-tbody tr:nth-child(even) { background-color: #f9f9f9; }
+table img { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; }
 
-tbody tr:hover { background-color: #f1f1f1; }
-
-table img { width: 300px; height: 300px; object-fit: cover; border-radius: 4px; }
-
+/* Buttons */
 .update, .delete {
   text-decoration: none;
   padding: 6px 10px;
   border-radius: 4px;
   font-weight: bold;
-  font-size: 15px;
+  font-size: 14px;
+  transition: 0.3s;
 }
-
-.update { background-color: #4caf50; color: white; }
-.delete { background-color: #f44336; color: white; }
-.update:hover, .delete:hover { opacity: 0.8; }
+.update { background-color: #43a047; color: white; }
+.delete { background-color: #e53935; color: white; }
+.update:hover, .delete:hover { opacity: 0.85; }
 
 /* Description */
-.description-container {
-  max-width: 300px;
-  position: relative;
-}
-
+.description-container { max-width: 250px; position: relative; }
 .description-short {
   display: -webkit-box;
-  -webkit-line-clamp: 4; /* show only 4 lines */
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
-.description-container.expanded .description-short {
-  -webkit-line-clamp: unset;
-}
-
+.description-container.expanded .description-short { -webkit-line-clamp: unset; }
 .toggle-desc {
-  color: blue;
+  color: #1a237e; /* dark indigo */
   cursor: pointer;
-  font-size: 0.9em;
+  font-size: 0.85em;
   display: inline-block;
   margin-top: 5px;
 }
 
-.name { width: 150px; }
+/* Responsive */
+@media(max-width:1024px){
+  .content { top: 50px; margin-left:200px; padding:15px; }
+  .table-container { width: calc(100% - 200px); margin-left:200px; }
+}
+@media(max-width:768px){
+  .toggle-btn { display:block; }
+  
+  .sidebar {
+    transform: translateX(-100%);
+    width: 200px;
+  }
+  .sidebar.show { transform: translateX(0); }
+
+  .content {
+    margin-left: 0;
+    padding: 20px 15px 15px 15px;
+    position: relative;  /* remove top:50px */
+    top:50px;
+  }
+
+  .table-container {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+
 </style>
 </head>
 <body>
 
-<div class="dashbord_slider">
-  <ul>
+<button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+
+<div class="sidebar" id="sidebar">
+<ul>
     <li><a href="dashboard.php">Dashboard</a></li>
     <li><a href="addproduct.php">Add Product</a></li>
-    <li><a href="display.php">Update Product</a></li>
+    <li><a class="active" href="display.php">Update Products</a></li>
     <li><a href="vieworders.php">View Orders</a></li>
+    <li><a href="users.php">Users</a></li>
     <li><a href="logout.php">Logout</a></li>
-  </ul>
+</ul>
 </div>
 
+<div class="content">
 <div class="table-container">
 <table>
 <thead>
@@ -155,21 +196,21 @@ table img { width: 300px; height: 300px; object-fit: cover; border-radius: 4px; 
   <th>Stock</th>
   <th>Image</th>
   <th>Category Name</th>
-  <th>Action</th>
-  <th>Action</th>
+  <th>Update</th>
+  <th>Delete</th>
 </tr>
 </thead>
 <tbody>
 <?php while ($row = mysqli_fetch_assoc($result)) { ?>
 <tr>
-  <td class="name"><?php echo $row['name'] ?></td>
+  <td><?php echo $row['name'] ?></td>
   <td>
     <div class="description-container">
       <p class="description-short"><?php echo $row['description']; ?></p>
       <span class="toggle-desc">See more</span>
     </div>
   </td>
-  <td><?php echo $row['price'] ?></td>
+  <td>₹<?php echo $row['price'] ?></td>
   <td><?php echo $row['stock'] ?></td>
   <td><img src="../image/<?php echo $row['image'] ?>" alt=""></td>
   <td><?php echo $row['category_name'] ?></td>
@@ -180,8 +221,14 @@ table img { width: 300px; height: 300px; object-fit: cover; border-radius: 4px; 
 </tbody>
 </table>
 </div>
+</div>
 
 <script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('show');
+}
+
+// Description toggle
 document.querySelectorAll('.toggle-desc').forEach(function(toggle) {
   toggle.addEventListener('click', function() {
     const container = this.parentElement;
