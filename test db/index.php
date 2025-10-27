@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "db.php"; // make sure db.php has your DB connection
+include "db.php"; // ensure this has your DB connection
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -73,7 +73,6 @@ include "db.php"; // make sure db.php has your DB connection
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
     }
 
-    /* Image wrapper to hold stock badge */
     .image-wrapper {
       position: relative;
       margin-bottom: 1rem;
@@ -88,7 +87,6 @@ include "db.php"; // make sure db.php has your DB connection
       border-radius: 4px;
     }
 
-    /* Stock Notification Styling */
     .stock-badge {
       position: absolute;
       bottom: 0;
@@ -102,43 +100,26 @@ include "db.php"; // make sure db.php has your DB connection
       z-index: 10;
     }
 
-    .stock-low {
-      background-color: #ffc107; /* Yellow for low stock (1-4) */
-    }
+    .stock-low { background-color: #ffc107; }
+    .stock-few { background-color: #fd7e14; }
+    .stock-zero { background-color: #dc3545; }
 
-    .stock-few {
-      background-color: #fd7e14; /* Orange for 5 only */
-    }
-
-    .stock-zero {
-      background-color: #dc3545; /* Red for out of stock */
-    }
-
+    /* Limit product name to 3 lines */
     .product h2 {
       font-size: 1.25rem;
-      margin-top: 0;
-      margin-bottom: 0.5rem;
+      margin: 0 0 0.5rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: all 0.3s ease;
     }
 
-    .product p {
-      margin: 0.25rem 0;
-      color: #777;
-    }
-
-    .product a {
-      display: inline-block;
-      margin-top: 1rem;
-      padding: 0.75rem 1.5rem;
-      background-color: #f06292;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 5px;
-      font-weight: bold;
-      transition: background-color 0.3s;
-    }
-
-    .product a:hover {
-      background-color: #c2185b;
+    /* Expand full text when toggled */
+    .product h2.expanded {
+      -webkit-line-clamp: unset;
+      overflow: visible;
     }
 
     .description {
@@ -148,18 +129,50 @@ include "db.php"; // make sure db.php has your DB connection
       overflow: hidden;
       text-overflow: ellipsis;
       margin: 5px 0;
+      transition: all 0.3s ease;
     }
 
-    .show-more {
-      color: #e1628c;
-      cursor: pointer;
-      display: inline-block;
-      margin-top: 5px;
+    .description.expanded {
+      -webkit-line-clamp: unset;
+      overflow: visible;
     }
+.show-more {
+  color: #e1628c;
+  cursor: pointer;
+  display: inline-block;
+  font-weight: 500;
+  font-size:15px;
+  text-decoration: none; /* removed underline */
+  transition: all 0.3s ease;
+}
 
-    .show-more:hover {
-      color: #b82757;
-    }
+.show-more:hover {
+  
+  color: #c6285dff;
+}
+
+/* Buy Now button style */
+.product a {
+  display: inline-block;
+  background-color: #e1628c;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.product a:hover {
+  background-color: #c2185b;
+  transform: scale(1.05);
+}
+
+.product a[style*="cursor: not-allowed"] {
+  background-color: #6c757d !important;
+  color: #fff !important;
+  transform: none !important;
+}
 
     .footer {
       background-color: #f1a8c0;
@@ -167,6 +180,32 @@ include "db.php"; // make sure db.php has your DB connection
       text-align: center;
       padding: 1rem;
       margin-top: 2rem;
+    }
+
+    #whatsappBtn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #25d366;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    #whatsappBtn img {
+      width: 35px;
+      height: 35px;
+    }
+
+    #whatsappBtn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.4);
     }
   </style>
 </head>
@@ -180,7 +219,11 @@ include "db.php"; // make sure db.php has your DB connection
           <li><a href="login.php">Login</a></li>
           <li><a href="register.php">Sign Up</a></li>
         <?php } else { ?>
-          <li><a href="admin/dashboard.php">Dashboard</a></li>
+          <?php if ($_SESSION['user_role'] === 'admin') { ?>
+            <li><a href="admin/dashboard.php">Admin Dashboard</a></li>
+          <?php } else { ?>
+            <li><a href="dashboard.php">User Dashboard</a></li>
+          <?php } ?>
         <?php } ?>
       </ul>
     </nav>
@@ -196,7 +239,6 @@ include "db.php"; // make sure db.php has your DB connection
         $image = !empty($row['image']) ? "image/" . $row['image'] : "default.png";
         $stock = (int)$row['stock'];
 
-        // Determine stock status
         $stock_text = '';
         $stock_class = '';
 
@@ -219,8 +261,11 @@ include "db.php"; // make sure db.php has your DB connection
           </div>
 
           <h2><?php echo htmlspecialchars($row['name']); ?></h2>
+          <span class="show-more" onclick="toggleText(this, 'h2')">Show more</span>
+
           <p class="description"><?php echo htmlspecialchars($row['description']); ?></p>
-          <span class="show-more" onclick="toggleDescription(this)">Show more</span>
+          <span class="show-more" onclick="toggleText(this, 'p')">Show more</span>
+
           <p>Price: ₹<?php echo number_format($row['price']); ?></p>
 
           <?php if (isset($_SESSION['user_id']) && $stock > 0) { ?>
@@ -240,19 +285,18 @@ include "db.php"; // make sure db.php has your DB connection
   </main>
 
   <footer class="footer">
+    <a href="https://wa.me/919363587844" target="_blank" id="whatsappBtn" title="Chat with us on WhatsApp">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
+    </a>
     <p>&copy; 2025 Softlogic</p>
   </footer>
 
   <script>
-    function toggleDescription(element) {
-      const desc = element.previousElementSibling;
-      if (desc.style.webkitLineClamp === "unset") {
-        desc.style.webkitLineClamp = "3";
-        element.innerText = "Show more";
-      } else {
-        desc.style.webkitLineClamp = "unset";
-        element.innerText = "Show less";
-      }
+    // Common toggle function for both name & description
+    function toggleText(btn, tagType) {
+      const element = btn.previousElementSibling; // previous h2 or p
+      element.classList.toggle('expanded');
+      btn.textContent = element.classList.contains('expanded') ? 'Show less' : 'Show more';
     }
   </script>
 </body>
